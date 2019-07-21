@@ -30,7 +30,13 @@ class Tag extends Model implements Sortable
     {
         $locale = $locale ?? app()->getLocale();
 
-        return $query->whereRaw('lower('.$this->getQuery()->getGrammar()->wrap('name->'.$locale).') like ?', ['%'.mb_strtolower($name).'%']);
+
+        if(config('database.connections.' . config('database.default') . '.driver') === 'pgsql') {
+            return $query->where('name->' . $locale,  'ILIKE', '%' . strtolower($name) . '%');
+        }
+
+        return $query->whereRaw("LOWER(JSON_EXTRACT(name, '$.".$locale."')) like ?", ['"%'.mb_strtolower($name).'%"']);
+
     }
 
     /**
